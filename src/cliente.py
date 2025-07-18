@@ -28,13 +28,11 @@ class Cliente:
         pygame.quit()
         print("Aplicação encerrada.")
 
-# Uso principal
 tela = Cliente("Projeto Integrador")
 
 if tela.Iniciar():
     print("Iniciando!")
-    
-    # Corrigir COUNT
+
     resultado = tela.conexao.Executar("SELECT COUNT(*) FROM plantas")
     if not resultado:
         print("Erro ao obter número de plantas")
@@ -53,13 +51,14 @@ if tela.Iniciar():
         for i in range(1, tablelen + 1):
             dados = tela.conexao.Executar(f"SELECT imagem_url FROM plantas WHERE ID = {i}")
             if dados:
-                caminho = dados[0][0]  # Supondo que o campo se chama "imagem_url"
+                caminho = dados[0][0]  
                 try:
                     imagem = pygame.image.load(caminho)
-                    tela.__Tela__.blit(imagem, ((i - 1) * 64, 50))  # Ajuste de posição
+                    tela.__Tela__.blit(imagem, ((i - 1) * 64, 50))  
                 except Exception as e:
                     print(f"Erro ao carregar imagem do ID {i}: {e}")
 
         pygame.display.flip()
 
     tela.Encerrar()
+
