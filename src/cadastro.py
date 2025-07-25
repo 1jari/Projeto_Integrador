@@ -1,8 +1,11 @@
 import pygame
 import sys
 from cliente import Cliente
+import pegarimagem
+import os
+
 pygame.font.init()
-fonte = pygame.font.SysFont(None, 28)
+fonte = pygame.font.Font("src/fonts/Roboto-VariableFont_wdth,wght.ttf", 32)
 
 def desenhar_input(tela, campo, y, ativo):
     cor = (200, 200, 255) if ativo else (230, 230, 230)
@@ -18,7 +21,6 @@ def iniciar_cadastro(app):
     tela = app.GetTela()
     pygame.init()
     fonte = pygame.font.SysFont(None, 28)
-
     campos = [
         {"nome": "nome", "label": "Nome*", "texto": "", "obrigatorio": True},
         {"nome": "nome_cientifico", "label": "Nome Científico", "texto": "", "obrigatorio": False},
@@ -26,36 +28,25 @@ def iniciar_cadastro(app):
         {"nome": "caracteristicas", "label": "Características", "texto": "", "obrigatorio": False},
         {"nome": "uso", "label": "Uso", "texto": "", "obrigatorio": False},
     ]
-
     campo_ativo = 0
-
     app = Cliente("Cadastro de Planta")
-
     if not app.Iniciar():
         sys.exit()
-
     tela = app.GetTela()
-
-
-
     while app.Rodando:
         tela.fill((255, 255, 255))
         eventos = pygame.event.get()
-
         entradas = []
         for i, campo in enumerate(campos):
             entrada = desenhar_input(tela, campo, 50 + i * 80, campo_ativo == i)
             entradas.append(entrada)
-
         botao = pygame.Rect(100, 550, 200, 50)
         pygame.draw.rect(tela, (0, 150, 0), botao)
         texto_botao = fonte.render("Cadastrar Planta", True, (255, 255, 255))
         tela.blit(texto_botao, (botao.x + 15, botao.y + 10))
-
         for evento in eventos:
             if evento.type == pygame.QUIT:
                 app.Rodando = False
-
             if evento.type == pygame.MOUSEBUTTONDOWN:
                 for i, entrada in enumerate(entradas):
                     if entrada.collidepoint(evento.pos):
@@ -68,6 +59,11 @@ def iniciar_cadastro(app):
                         sql = f"INSERT INTO plantas ({colunas}) VALUES ({valores_str})"
                         try:
                             app.conexao.Executar(sql)
+                            nome_planta = campos[0]["texto"]
+                            if os.path.exists(pegarimagem.caminho_contador):
+                                with open(pegarimagem.caminho_contador, "r") as arquivo:
+                                    contador = int(arquivo.read().strip())
+                            pegarimagem.buscar_e_salvar_imagem(nome_planta,contador)
                             print("Planta cadastrada com sucesso!")
                             for c in campos:
                                 c["texto"] = ""
@@ -75,7 +71,6 @@ def iniciar_cadastro(app):
                             print("Erro ao cadastrar:", e)
                     else:
                         print("Preencha os campos obrigatórios!")
-
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_BACKSPACE:
                     campos[campo_ativo]["texto"] = campos[campo_ativo]["texto"][:-1]
@@ -83,7 +78,5 @@ def iniciar_cadastro(app):
                     campo_ativo = (campo_ativo + 1) % len(campos)
                 else:
                     campos[campo_ativo]["texto"] += evento.unicode
-
         pygame.display.flip()
-
     app.Encerrar()
