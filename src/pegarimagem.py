@@ -2,13 +2,20 @@ import pyautogui as auto
 import time
 import os
 import cv2
+import hashlib
 import numpy as np
 from PIL import Image
 from conexao import Conexao
 
-
 pasta_destino = r"C:\Users\LEONARDOMEDEIROSHUNT\Desktop\Projeto_Integrador\dados\img"
 os.makedirs(pasta_destino, exist_ok=True)
+caminho_contador = "contador_imagem.txt"
+
+def criar_hash(txt):
+    resultado = 0
+    for c in txt:
+        resultado += ord(c)  # Usa o código ASCII/unicode do caractere
+    return resultado
 
 def obter_nomes_do_banco():
     conexao = Conexao(db='herbario', host='127.0.0.1')
@@ -45,10 +52,14 @@ def detectar_e_salvar_area_verde(contador, nome):
 
     planta = frame[y:y+h, x:x+w]
     imagem = Image.fromarray(planta)
-    caminho = os.path.join(pasta_destino, f"{contador}.jpg")
+    caminho = os.path.join(pasta_destino, f"{hashlib.md5(nome.encode()).hexdigest()}.jpg")
     imagem.save(caminho)
     print(f"Imagem salva em: {caminho}")
     time.sleep(2)
+
+    with open(caminho_contador, "w") as arquivo:
+        arquivo.write(str(contador + 1))
+
 
 def buscar_e_salvar_imagem(nome, contador):
     print(f"\nBuscando imagem de {nome}...")
@@ -68,19 +79,26 @@ def buscar_e_salvar_imagem(nome, contador):
     time.sleep(4)
 
     detectar_e_salvar_area_verde(contador, nome)
- 
+
     auto.hotkey("alt", "f4")
     time.sleep(1)
 
 if __name__ == "__main__":
     nomes = obter_nomes_do_banco()
-    
-    
+
     if not nomes:
         print("Nenhum nome encontrado no banco.")
         exit()
 
-    for i, nome in enumerate(nomes, start=1):
-        buscar_e_salvar_imagem(nome, i)
-    
+    if os.path.exists(caminho_contador):
+        with open(caminho_contador, "r") as arquivo:
+            contador = int(arquivo.read().strip())
+    else:
+        contador = 0
+
+    for i in range(contador, len(nomes)):
+        buscar_e_salvar_imagem(nomes[i], i)
+
     print("\nProcesso concluído!")
+
+    

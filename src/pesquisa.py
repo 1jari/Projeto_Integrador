@@ -1,9 +1,17 @@
 import pygame
 from conexao import Conexao
+import hashlib
+import os
 
 pygame.init()
 pygame.font.init()
-fonte = pygame.font.SysFont(None, 28)
+fonte = pygame.font.Font("src/fonts/Roboto-VariableFont_wdth,wght.ttf", 32)
+
+def criar_hash(txt):
+    resultado = 0
+    for c in txt:
+        resultado += ord(c)  # Usa o código ASCII/unicode do caractere
+    return resultado
 
 def quebrar_texto(texto, fonte, largura_max):
     palavras = texto.split(' ')
@@ -25,25 +33,6 @@ def pesquisar_por_nome(app):
 
 def pesquisar_por_uso(app):
     buscar(app, campo="uso")
-
-def mostrar_todas(app):
-    tela = app.GetTela()
-    resultado = app.conexao.Executar("SELECT * FROM plantas")
-    tela.fill((255, 255, 255))
-
-    y = 50
-    for nome, url in resultado:
-        try:
-            imagem = pygame.image.load(url)
-            tela.blit(imagem, (50, y))
-        except:
-            pass
-        txt = fonte.render(nome, True, (0, 0, 0))
-        tela.blit(txt, (200, y + 20))
-        y += 100
-
-    pygame.display.flip()
-    aguardar_fechar()
 
 def buscar(app, campo):
     tela = app.GetTela()
@@ -87,39 +76,49 @@ def mostrar_paginas(app, resultados, plantas_por_pagina=3):
 
         y = 50
         for planta in pagina_plantas:
-            id_, nome, nome_cientifico, descricao, caracteristicas, uso, url = planta
+            id_, nome, nome_cientifico, descricao, caracteristicas, uso, _ = planta
+
+            # Caminho baseado no nome da planta (ex: "alecrim.jpg")
+            nome_arquivo = f"{hashlib.md5(nome.encode()).hexdigest()}.jpg"
+            caminho_img = os.path.join("dados", "img", nome_arquivo)
 
             try:
-                img = pygame.image.load(url)
-                tela.blit(img, (50, y))
-            except:
-                pass
+                if os.path.isfile(caminho_img):
+                    img = pygame.image.load(caminho_img)
+                    img = pygame.transform.scale(img, (100, 100))
+                    tela.blit(img, (50, y))
+                else:
+                    print(f"Imagem não encontrada: {caminho_img}")
+            except Exception as e:
+                print(f"Erro ao carregar imagem: {e}")
 
-            tela.blit(fonte.render(f"Nome: {nome}", True, (0, 0, 0)), (200, y))
-            tela.blit(fonte.render(f"Nome Científico: {nome_cientifico}", True, (0, 0, 0)), (200, y + 25))
+            tela.blit(fonte.render(f"Nome: {nome}", True, (0, 0, 0)), (160, y))
+            tela.blit(fonte.render(f"Nome Científico: {nome_cientifico}", True, (0, 0, 0)), (160, y + 25))
 
             linhas_desc = quebrar_texto(descricao, fonte, largura_texto)
             linhas_caract = quebrar_texto(caracteristicas, fonte, largura_texto)
             linhas_uso = quebrar_texto(uso, fonte, largura_texto)
 
             offset = 50
+            tela.blit(fonte.render("Descrição:", True, (0, 0, 0)), (160, y + offset))
+            offset += 25
             for linha in linhas_desc:
-                tela.blit(fonte.render(linha, True, (0, 0, 0)), (200, y + offset))
+                tela.blit(fonte.render(linha, True, (0, 0, 0)), (160, y + offset))
                 offset += 25
 
-            tela.blit(fonte.render("Características:", True, (0, 0, 0)), (200, y + offset))
+            tela.blit(fonte.render("Características:", True, (0, 0, 0)), (160, y + offset))
             offset += 25
             for linha in linhas_caract:
-                tela.blit(fonte.render(linha, True, (0, 0, 0)), (200, y + offset))
+                tela.blit(fonte.render(linha, True, (0, 0, 0)), (160, y + offset))
                 offset += 25
 
-            tela.blit(fonte.render("Uso:", True, (0, 0, 0)), (200, y + offset))
+            tela.blit(fonte.render("Uso:", True, (0, 0, 0)), (160, y + offset))
             offset += 25
             for linha in linhas_uso:
-                tela.blit(fonte.render(linha, True, (0, 0, 0)), (200, y + offset))
+                tela.blit(fonte.render(linha, True, (0, 0, 0)), (160, y + offset))
                 offset += 25
 
-            y += max(offset + 20, 140)  
+            y += max(offset + 20, 140)
 
         texto_pagina = fonte.render(f"Página {pagina_atual + 1} de {((total - 1) // plantas_por_pagina) + 1}", True, (0, 0, 0))
         tela.blit(texto_pagina, (50, 20))
@@ -130,12 +129,10 @@ def mostrar_paginas(app, resultados, plantas_por_pagina=3):
             if evento.type == pygame.QUIT:
                 rodando = False
             elif evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_RIGHT:
-                    if fim < total:
-                        pagina_atual += 1
-                elif evento.key == pygame.K_LEFT:
-                    if pagina_atual > 0:
-                        pagina_atual -= 1
+                if evento.key == pygame.K_RIGHT and fim < total:
+                    pagina_atual += 1
+                elif evento.key == pygame.K_LEFT and pagina_atual > 0:
+                    pagina_atual -= 1
                 elif evento.key == pygame.K_ESCAPE:
                     rodando = False
 

@@ -16,7 +16,8 @@ class Conexao:
                 port=3306,
                 user=self.__User__,
                 password=self.__Password__,
-                database=self.__Db__
+                database=self.__Db__,
+                charset="utf8mb4"
             )
             self.Cursor = self.Conexao.cursor()
             print("Conexão ao MySQL estabelecida com sucesso")

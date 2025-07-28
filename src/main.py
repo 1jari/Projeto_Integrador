@@ -5,7 +5,7 @@ import pesquisa
 
 pygame.init()
 pygame.font.init()
-fonte = pygame.font.SysFont(None, 32)
+fonte = pygame.font.Font("src/fonts/Roboto-VariableFont_wdth,wght.ttf", 32)
 
 class Botao:
     def __init__(self, texto, x, y, largura=400, altura=60):
@@ -29,13 +29,13 @@ def menu():
     botoes = [
         Botao("Cadastrar Planta", 300, 200),
         Botao("Pesquisar por Nome", 300, 280),
-        Botao("Pesquisar por Descrição", 300, 360),
+        Botao("Pesquisar por Uso", 300, 360),
         Botao("Mostrar Todas as Plantas", 300, 440),
     ]
 
     while app.Rodando:
         tela.fill((240, 255, 240))
-        titulo = fonte.render("Menu do Herbário", True, (0, 100, 0))
+        titulo = fonte.render("Menu do Herbário", True, (0, 128, 0))
         tela.blit(titulo, (380, 100))
 
         for evento in pygame.event.get():
@@ -60,7 +60,6 @@ def menu():
                             mostrar_paginas(app, resultado)
         for botao in botoes:
             botao.desenhar(tela)
-
         pygame.display.flip()
 
     app.Encerrar()
