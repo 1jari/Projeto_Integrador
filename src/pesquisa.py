@@ -100,6 +100,8 @@ def mostrar_paginas(app, resultados, plantas_por_pagina=3):
             linhas_uso = quebrar_texto(uso, fonte, largura_texto)
 
             offset = 50
+            tela.blit(fonte.render("Descrição:", True, (0, 0, 0)), (160, y + offset))
+            offset += 25
             for linha in linhas_desc:
                 tela.blit(fonte.render(linha, True, (0, 0, 0)), (160, y + offset))
                 offset += 25
