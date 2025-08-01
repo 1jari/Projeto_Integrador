@@ -60,68 +60,84 @@ def buscar(app, campo):
                 else:
                     texto += evento.unicode
 
-def mostrar_paginas(app, resultados, plantas_por_pagina=3):
+def mostrar_paginas(app, resultados, plantas_por_pagina=2):
     tela = app.GetTela()
     total = len(resultados)
     pagina_atual = 0
-    largura_texto = 700  
+
+    fonte_titulo = pygame.font.Font("src/fonts/Roboto-VariableFont_wdth,wght.ttf", 36)
+    fonte_texto = pygame.font.Font("src/fonts/Roboto-VariableFont_wdth,wght.ttf", 24)
+
+    largura_texto = 700
+    margem_lateral = 40
+    altura_disponivel = tela.get_height() - 100
 
     rodando = True
     while rodando:
-        tela.fill((255, 255, 255))
+        tela.fill((235, 255, 235))  # fundo
 
         inicio = pagina_atual * plantas_por_pagina
         fim = inicio + plantas_por_pagina
         pagina_plantas = resultados[inicio:fim]
 
-        y = 50
+        y = 80
         for planta in pagina_plantas:
             id_, nome, nome_cientifico, descricao, caracteristicas, uso, _ = planta
 
-            # Caminho baseado no nome da planta (ex: "alecrim.jpg")
+            linhas_desc = quebrar_texto(descricao, fonte_texto, largura_texto)
+            linhas_caract = quebrar_texto(caracteristicas, fonte_texto, largura_texto)
+            linhas_uso = quebrar_texto(uso, fonte_texto, largura_texto)
+
+            altura_card = 160 + 25 * (len(linhas_desc) + len(linhas_caract) + len(linhas_uso))
+
+            # Evita que vaze para fora da tela
+            if y + altura_card > altura_disponivel:
+                break
+
+            # Cartão
+            card_rect = pygame.Rect(margem_lateral, y - 10, 920, altura_card)
+            sombra_rect = pygame.Rect(margem_lateral + 4, y - 6, 920, altura_card)
+            pygame.draw.rect(tela, (200, 230, 200), sombra_rect, border_radius=12)
+            pygame.draw.rect(tela, (255, 255, 255), card_rect, border_radius=12)
+
+            # Imagem
             nome_arquivo = f"{hashlib.md5(nome.encode()).hexdigest()}.jpg"
             caminho_img = os.path.join("dados", "img", nome_arquivo)
-
             try:
                 if os.path.isfile(caminho_img):
                     img = pygame.image.load(caminho_img)
                     img = pygame.transform.scale(img, (100, 100))
-                    tela.blit(img, (50, y))
-                else:
-                    print(f"Imagem não encontrada: {caminho_img}")
+                    tela.blit(img, (margem_lateral + 20, y + 10))
             except Exception as e:
-                print(f"Erro ao carregar imagem: {e}")
+                print(f"Erro na imagem: {e}")
 
-            tela.blit(fonte.render(f"Nome: {nome}", True, (0, 0, 0)), (160, y))
-            tela.blit(fonte.render(f"Nome Científico: {nome_cientifico}", True, (0, 0, 0)), (160, y + 25))
+            texto_x = margem_lateral + 140
+            texto_y = y + 10
 
-            linhas_desc = quebrar_texto(descricao, fonte, largura_texto)
-            linhas_caract = quebrar_texto(caracteristicas, fonte, largura_texto)
-            linhas_uso = quebrar_texto(uso, fonte, largura_texto)
+            tela.blit(fonte_texto.render(f"Nome: {nome}", True, (0, 100, 0)), (texto_x, texto_y))
+            texto_y += 28
+            tela.blit(fonte_texto.render(f"Nome Científico: {nome_cientifico}", True, (0, 100, 0)), (texto_x, texto_y))
+            texto_y += 35
 
-            offset = 50
-            tela.blit(fonte.render("Descrição:", True, (0, 0, 0)), (160, y + offset))
-            offset += 25
-            for linha in linhas_desc:
-                tela.blit(fonte.render(linha, True, (0, 0, 0)), (160, y + offset))
-                offset += 25
+            def desenhar_bloco(titulo, linhas, y_pos):
+                tela.blit(fonte_texto.render(f"{titulo}:", True, (0, 0, 0)), (texto_x, y_pos))
+                y_pos += 25
+                for linha in linhas:
+                    tela.blit(fonte_texto.render(linha, True, (50, 50, 50)), (texto_x, y_pos))
+                    y_pos += 25
+                return y_pos
 
-            tela.blit(fonte.render("Características:", True, (0, 0, 0)), (160, y + offset))
-            offset += 25
-            for linha in linhas_caract:
-                tela.blit(fonte.render(linha, True, (0, 0, 0)), (160, y + offset))
-                offset += 25
+            texto_y = desenhar_bloco("Descrição", linhas_desc, texto_y)
+            texto_y = desenhar_bloco("Características", linhas_caract, texto_y)
+            texto_y = desenhar_bloco("Uso", linhas_uso, texto_y)
 
-            tela.blit(fonte.render("Uso:", True, (0, 0, 0)), (160, y + offset))
-            offset += 25
-            for linha in linhas_uso:
-                tela.blit(fonte.render(linha, True, (0, 0, 0)), (160, y + offset))
-                offset += 25
+            y += altura_card + 20
 
-            y += max(offset + 20, 140)
-
-        texto_pagina = fonte.render(f"Página {pagina_atual + 1} de {((total - 1) // plantas_por_pagina) + 1}", True, (0, 0, 0))
-        tela.blit(texto_pagina, (50, 20))
+        # Número da página
+        texto_pagina = fonte_titulo.render(
+            f"Página {pagina_atual + 1} de {((total - 1) // plantas_por_pagina) + 1}",
+            True, (0, 100, 0))
+        tela.blit(texto_pagina, (tela.get_width() // 2 - texto_pagina.get_width() // 2, 20))
 
         pygame.display.flip()
 
@@ -135,6 +151,8 @@ def mostrar_paginas(app, resultados, plantas_por_pagina=3):
                     pagina_atual -= 1
                 elif evento.key == pygame.K_ESCAPE:
                     rodando = False
+
+
 
 def aguardar_fechar():
     esperando = True
